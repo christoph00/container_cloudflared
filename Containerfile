@@ -1,18 +1,16 @@
 ARG ARCH
-FROM golang:alpine as gobuild
+FROM docker.io/library/golang:alpine as gobuild
 
 ARG GOARCH
 ARG GOARM
 
-RUN apk update; \
-    apk add git gcc build-base; \
-    go get -v github.com/cloudflare/cloudflared/cmd/cloudflared
+RUN go get -v github.com/cloudflare/cloudflared/cmd/cloudflared
 
 WORKDIR /go/src/github.com/cloudflare/cloudflared/cmd/cloudflared
 
 RUN GOARCH=${GOARCH} GOARM=${GOARM} go build ./
 
-FROM alpine:latest
+FROM docker.io/library/alpine
 
 ENV DNS1 1.1.1.1
 ENV DNS2 1.0.0.1
