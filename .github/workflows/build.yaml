@@ -32,7 +32,7 @@ jobs:
         uses: redhat-actions/buildah-build@v2
         with:
           image: container_cloudflared
-          tags: latest
+          tags: ${{ matrix.arch }}
           archs: ${{ matrix.arch }}
           build-args: TARGETARCH=${{ matrix.arch  }} TARGETOS=linux
           oci: true
