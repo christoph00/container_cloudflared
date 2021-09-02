@@ -1,23 +1,11 @@
-ARG ARCH
-FROM docker.io/library/golang:alpine as gobuild
-
-ARG GOARCH
-ARG GOARM
-
-RUN go get -v github.com/cloudflare/cloudflared/cmd/cloudflared
-
-WORKDIR /go/src/github.com/cloudflare/cloudflared/cmd/cloudflared
-
-RUN GOARCH=${GOARCH} GOARM=${GOARM} go build ./
-
 FROM docker.io/library/alpine
 
-ENV DNS1 1.1.1.1
-ENV DNS2 1.0.0.1
+ARG ARCH
+RUN \
+    CVERSION="latest/download" \
+    && apk add --no-cache libc6-compat yq \
+    && wget -O /usr/local/bin/cloudflared https://github.com/cloudflare/cloudflared/releases/$CVERSION/cloudflared-linux-$ARCH && chmod +x /usr/local/bin/cloudflared
 
-RUN apk add --no-cache ca-certificates bind-tools; \
-    rm -rf /var/cache/apk/*;
+RUN cloudflared -v
 
-COPY --from=gobuild /go/src/github.com/cloudflare/cloudflared/cmd/cloudflared/cloudflared /usr/local/bin/cloudflared
-
-CMD ["/usr/local/bin/cloudflared"]
+ENTRYPOINT ["/usr/local/bin/cloudflared"]
