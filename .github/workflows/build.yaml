@@ -34,7 +34,7 @@ jobs:
           image: container_cloudflared
           tags: latest
           archs: ${{ matrix.arch }}
-          build-args: GOARCH=${{ matrix.arch  }}
+          build-args: TARGETARCH=${{ matrix.arch  }} TARGETOS=linux
           oci: true
           dockerfiles: ./Containerfile
 

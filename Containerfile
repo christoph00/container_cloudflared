@@ -1,11 +1,26 @@
-FROM docker.io/library/alpine
+ARG GOVERSION=1.17.0
+FROM --platform=${BUILDPLATFORM} \
+    golang:$GOVERSION-alpine AS build
 
-ARG ARCH
-RUN \
-    CVERSION="latest/download" \
-    && apk add --no-cache libc6-compat yq \
-    && wget -O /usr/local/bin/cloudflared https://github.com/cloudflare/cloudflared/releases/$CVERSION/cloudflared-linux-$ARCH && chmod +x /usr/local/bin/cloudflared
+WORKDIR /src
+RUN apk --no-cache add git build-base
 
-RUN cloudflared -v
+ENV GO111MODULE=on \
+    CGO_ENABLED=0
 
-ENTRYPOINT ["/usr/local/bin/cloudflared"]
+ARG VERSION=2021.8.7
+RUN git clone https://github.com/cloudflare/cloudflared --depth=1 --branch ${VERSION} .
+ARG TARGETOS
+ARG TARGETARCH
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} make cloudflared
+
+# Runtime container
+FROM scratch
+WORKDIR /
+
+COPY --from=build /src/cloudflared .
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+ENV TUNNEL_ORIGIN_CERT=/etc/cloudflared/cert.pem
+ENTRYPOINT ["/cloudflared", "--no-autoupdate"]
+CMD ["version"]
